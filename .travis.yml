@@ -1,7 +1,7 @@
 language: go
 
-go:
-  - 1.x
+notifications:
+  email: false
 
 install:
   - go get github.com/kardianos/govendor
@@ -9,7 +9,19 @@ install:
   - govendor sync
 
 script:
-  - go test -coverprofile=coverage.txt -covermode=atomic
+  - GOOS=linux GOARCH=amd64 go test ./...
+  - GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Commit=${TRAVIS_COMMIT} -X main.Build=$(date +%Y%m%d) -s -w" -o go-audit-linux
+# Debug purpose to check deps
+  - file go-audit-linux && ldd go-audit-linux 
 
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key: $GITHUB_TOKEN
+  file:
+    - go-audit-linux
+  on:
+    tags: true
+    repo: BaritoLog/go-audit
+    all_branches: true
+
